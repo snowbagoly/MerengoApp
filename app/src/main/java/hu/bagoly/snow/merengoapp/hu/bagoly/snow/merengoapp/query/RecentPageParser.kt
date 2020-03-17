@@ -1,13 +1,12 @@
 package hu.bagoly.snow.merengoapp.hu.bagoly.snow.merengoapp.query
 
 import hu.bagoly.snow.merengoapp.hu.bagoly.snow.merengoapp.model.StoryDescriptor
-import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 
-class RecentPageParser(val url: String) {
+class RecentPageParser() {
     val idRegex = Regex("sid=(\\d+)")
     val descriptors = ArrayList<StoryDescriptor>()
-    fun parse() {
-        val doc = Jsoup.connect(url).get()
+    fun parse(doc: Document) {
         val storyDescriptors = doc.select(".mainnav")
         for (story in storyDescriptors) {
             val titleElement = story.select("span.storytitle a")
@@ -43,7 +42,7 @@ class RecentPageParser(val url: String) {
             println("WC: $wordCount - isFinished: $isFinished")
 
             id?.let {
-                val storyDescriptor = StoryDescriptor(id = id, author = author, title = title,
+                val storyDescriptor = StoryDescriptor(id = it, author = author, title = title,
                     description = description, category = category, cast = cast,
                     ageLimit = ageLimit, warnings = warnings, properties = properties,
                     chapterCount = chapterCount, creationDate = creationDate,
@@ -53,8 +52,4 @@ class RecentPageParser(val url: String) {
             }
         }
     }
-}
-
-fun main() {
-    RecentPageParser("https://fanfic.hu/merengo/search.php?action=recent").parse()
 }
