@@ -1,23 +1,23 @@
-package hu.bagoly.snow.merengoapp.hu.bagoly.snow.merengoapp.query
+package hu.bagoly.snow.merengoapp.query
 
-import hu.bagoly.snow.merengoapp.hu.bagoly.snow.merengoapp.model.StoryDescriptor
+import hu.bagoly.snow.merengoapp.model.StoryDescriptor
 import org.jsoup.nodes.Document
 
-class RecentPageParser() {
+class RecentPageParser {
     val idRegex = Regex("sid=(\\d+)")
     val descriptors = ArrayList<StoryDescriptor>()
     fun parse(doc: Document) {
         val storyDescriptors = doc.select(".mainnav")
         for (story in storyDescriptors) {
             val titleElement = story.select("span.storytitle a")
-            val isAdultContent = titleElement.attr("href").contains("javascript")
             val title = titleElement.text()
             val id = idRegex.find(titleElement.attr("href"))?.groups?.get(1)?.value
 
-            val author = "TODO"
-            val criticsCount = "TODO"
+            val firstRowLinks = story.select("div").get(0).select("> a")
+            val author = firstRowLinks.get(0).text()
+            val criticsCount = firstRowLinks.get(2).text()
 
-            val description = story.select("tr").get(1).select("td").text()
+            val description = story.select("tr").get(1).select("td").html()
 
             val category = story.select("tr").get(3).select("td").get(1).text()
             val cast = story.select("tr").get(4).select("td").get(1).text()
@@ -34,20 +34,15 @@ class RecentPageParser() {
             val wordCount = story.select("tr").get(8).select("td").get(1).text()
             val isFinished = "Igen" == story.select("tr").get(8).select("td").get(3).text()
 
-            println("title: $title ($isAdultContent) - id: $id\r\nDescription: $description")
-            println("Category: $category - Cast: $cast")
-            println("Agelimit: $ageLimit - Warnings: $warnings")
-            println("Props: $properties - ChC: $chapterCount")
-            println("CrD: $creationDate - LRD: $lastRefreshDate")
-            println("WC: $wordCount - isFinished: $isFinished")
-
             id?.let {
-                val storyDescriptor = StoryDescriptor(id = it, author = author, title = title,
+                val storyDescriptor = StoryDescriptor(
+                    id = it, author = author, title = title,
                     description = description, category = category, cast = cast,
                     ageLimit = ageLimit, warnings = warnings, properties = properties,
                     chapterCount = chapterCount, creationDate = creationDate,
                     lastRefreshDate = lastRefreshDate, wordCount = wordCount,
-                    isFinished = isFinished)
+                    isFinished = isFinished
+                )
                 descriptors.add(storyDescriptor)
             }
         }

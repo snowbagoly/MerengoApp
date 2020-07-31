@@ -1,4 +1,4 @@
-package hu.bagoly.snow.merengoapp.hu.bagoly.snow.merengoapp.model
+package hu.bagoly.snow.merengoapp.model
 
 class StoryDescriptor(
     val id: String,

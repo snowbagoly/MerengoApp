@@ -1,16 +1,13 @@
-package hu.bagoly.snow.merengoapp.hu.bagoly.snow.merengoapp.query
+package hu.bagoly.snow.merengoapp.query
 
 import android.content.Context
-import android.net.ConnectivityManager
 import android.os.AsyncTask
-import android.os.AsyncTask.execute
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.io.IOException
-import java.net.URL
 
 private const val TAG = "NetworkFragment"
 private const val URL_KEY = "UrlKey"
