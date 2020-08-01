@@ -20,6 +20,9 @@ import org.jsoup.nodes.Document
 
 class StoryActivity : DownloadCallbackActivity() {
 
+    var id: String? = null
+    var forceOpenChapter: Boolean = false
+
     override fun handleResult(doc: Document) {
         if (isStoryPage(doc)) {
             val parser = StoryPageParser()
@@ -59,16 +62,17 @@ class StoryActivity : DownloadCallbackActivity() {
             return
         }
 
-        val id = bundle["id"]
-        val forceOpenChapter = bundle.containsKey("forceOpenChapter")
-        val storyUrl =
-            "https://fanfic.hu/merengo/viewstory.php?sid=$id" + if (forceOpenChapter) "&i=1" else ""
-        initializeNetworkFragment(storyUrl)
+        id = bundle.getString("id")
+        forceOpenChapter = bundle.containsKey("forceOpenChapter")
+
+        initializeNetworkFragment()
     }
 
     override fun onStart() {
         super.onStart()
-        startDownloading()
+        val storyUrl =
+            "https://fanfic.hu/merengo/viewstory.php?sid=$id" + if (forceOpenChapter) "&i=1" else ""
+        startDownloading(storyUrl)
     }
 
     class ChapterDescriptorRecyclerViewAdapter(private val values: List<ChapterDescriptor>) :

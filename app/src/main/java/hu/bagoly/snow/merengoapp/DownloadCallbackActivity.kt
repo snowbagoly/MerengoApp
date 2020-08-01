@@ -18,8 +18,8 @@ abstract class DownloadCallbackActivity : AppCompatActivity(), DownloadCallback<
     // downloads with consecutive button clicks.
     private var downloading = false
 
-    fun initializeNetworkFragment(networkUrl: String) {
-        networkFragment = NetworkFragment.getInstance(supportFragmentManager, networkUrl)
+    fun initializeNetworkFragment() {
+        networkFragment = NetworkFragment.getInstance(supportFragmentManager)
         networkFragment?.let {
             val networkCallback = DownloadCancellerNetworkCallback(it)
             val connectivityManager =
@@ -35,12 +35,13 @@ abstract class DownloadCallbackActivity : AppCompatActivity(), DownloadCallback<
         if (result == null) {
             Toast.makeText(this, "A letöltés sikertelen", Toast.LENGTH_SHORT).show()
         }
+        finishDownloading()
     }
 
-    fun startDownloading() {
+    fun startDownloading(url: String) {
         if (!downloading) {
             downloading = true
-            networkFragment?.startDownload()
+            networkFragment?.startDownload(url)
         }
     }
 

@@ -7,9 +7,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import hu.bagoly.snow.merengoapp.model.StoryDescriptor
 import hu.bagoly.snow.merengoapp.query.RecentPageParser
+import hu.bagoly.snow.merengoapp.query.RefreshType
 import kotlinx.android.synthetic.main.story_descriptor_item_list.*
 import kotlinx.android.synthetic.main.story_descriptor_item_list_content.view.*
 import org.jsoup.nodes.Document
@@ -17,24 +19,55 @@ import org.jsoup.nodes.Document
 class MainActivity : DownloadCallbackActivity() {
 
     val parser = RecentPageParser()
-    val recentPageUrl =
-        "https://fanfic.hu/merengo/search.php?action=recent&offset=8000" //TODO don't forget to set this back
+    var lastRefreshType: RefreshType = RefreshType.LOAD_NEW
+    var lastOffsetLoaded: Int? = null
+    var triggeredOffset = 0
+    val recentPageUrl = "https://fanfic.hu/merengo/search.php?action=recent"
 
     override fun handleResult(doc: Document) {
-        parser.parse(doc)
+        parser.parse(doc, lastRefreshType)
         story_descriptor_item_list.adapter?.notifyDataSetChanged()
+        lastOffsetLoaded = triggeredOffset
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        initializeNetworkFragment(recentPageUrl)
+        initializeNetworkFragment()
         story_descriptor_item_list.adapter = StoryDescriptorRecyclerViewAdapter(parser.descriptors)
+        story_descriptor_item_list.layoutManager = LinearLayoutManager(this)
+        story_descriptor_item_list.addOnScrollListener(StoryListScrollListener(this::triggerLoadingNext))
     }
 
     override fun onStart() {
         super.onStart()
-        startDownloading()
+        startDownloading(recentPageUrl)
+    }
+
+    fun triggerLoadingNext(refreshType: RefreshType) {
+        // ignore loading if the last trigger was not yet finished
+        if (lastOffsetLoaded != triggeredOffset)
+            return
+
+        triggeredOffset += 15
+        lastRefreshType = refreshType // TODO this will not work properly
+        val recentPageUrl =
+            "https://fanfic.hu/merengo/search.php?action=recent&offset=${triggeredOffset}" // check if it changes or not
+        startDownloading(recentPageUrl)
+    }
+
+    class StoryListScrollListener(val triggerUpdate: (RefreshType) -> Unit) :
+        RecyclerView.OnScrollListener() {
+
+        override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            val totalItemCount = recyclerView.layoutManager!!.itemCount
+            val layoutManager: LinearLayoutManager =
+                recyclerView.layoutManager as LinearLayoutManager
+            val lastItemPosition = layoutManager.findLastVisibleItemPosition()
+            if (lastItemPosition == totalItemCount - 1) {
+                triggerUpdate(RefreshType.LOAD_OLD)
+            }
+        }
     }
 
     class StoryDescriptorRecyclerViewAdapter(private val values: List<StoryDescriptor>) :

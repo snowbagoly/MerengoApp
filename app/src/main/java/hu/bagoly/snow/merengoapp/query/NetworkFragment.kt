@@ -10,18 +10,18 @@ import org.jsoup.nodes.Document
 import java.io.IOException
 
 private const val TAG = "NetworkFragment"
-private const val URL_KEY = "UrlKey"
 
 class NetworkFragment : Fragment() {
     private var callback: DownloadCallback<Document>? = null
-    private var downloadTask: DownloadTask? = null
+    private val queueLock = Object()
+    private val downloadTasks = HashMap<String, DownloadTask>()
 
     companion object {
         /**
          * Static initializer for NetworkFragment that sets the URL of the host it will be
          * downloading from.
          */
-        fun getInstance(fragmentManager: FragmentManager, url: String): NetworkFragment {
+        fun getInstance(fragmentManager: FragmentManager): NetworkFragment {
             // Recover NetworkFragment in case we are re-creating the Activity due to a config change.
             // This is necessary because NetworkFragment might have a task that began running before
             // the config change occurred and has not finished yet.
@@ -29,9 +29,6 @@ class NetworkFragment : Fragment() {
             var networkFragment = fragmentManager.findFragmentByTag(TAG) as? NetworkFragment
             if (networkFragment == null) {
                 networkFragment = NetworkFragment()
-                networkFragment.arguments = Bundle().apply {
-                    putString(URL_KEY, url)
-                }
                 fragmentManager.beginTransaction()
                     .add(networkFragment, TAG)
                     .commit()
@@ -67,13 +64,17 @@ class NetworkFragment : Fragment() {
     /**
      * Start non-blocking execution of DownloadTask.
      */
-    fun startDownload() {
-        cancelDownload()
+    fun startDownload(url: String) {
+
         callback?.also {
-            downloadTask = DownloadTask(it).apply {
-                val urlString = arguments?.getString(URL_KEY)
-                execute(urlString)
+            synchronized(queueLock) {
+                if (!downloadTasks.contains(url) || downloadTasks[url]?.status != AsyncTask.Status.RUNNING) {
+                    downloadTasks.put(url, DownloadTask(it).apply {
+                        execute(url)
+                    })
+                }
             }
+
         }
     }
 
@@ -81,24 +82,14 @@ class NetworkFragment : Fragment() {
      * Cancel (and interrupt if necessary) any ongoing DownloadTask execution.
      */
     fun cancelDownload() {
-        downloadTask?.cancel(true)
+        downloadTasks.forEach { (url, downloadTask) -> downloadTask.cancel(true) }
     }
 
     /**
      * Implementation of AsyncTask designed to fetch data from the network.
      */
-    private class DownloadTask(callback: DownloadCallback<Document>)
-        : AsyncTask<String, Int, DownloadTask.Result>() {
-
-        private var callback: DownloadCallback<Document>? = null
-
-        init {
-            setCallback(callback)
-        }
-
-        internal fun setCallback(callback: DownloadCallback<Document>) {
-            this.callback = callback
-        }
+    private class DownloadTask(val callback: DownloadCallback<Document>) :
+        AsyncTask<String, Int, DownloadTask.Result>() {
 
         /**
          * Wrapper class that serves as a union of a result value and an exception. When the download
@@ -129,10 +120,12 @@ class NetworkFragment : Fragment() {
          */
         override fun doInBackground(vararg urls: String): DownloadTask.Result? {
             var result: Result? = null
+            println(urls)
             if (!isCancelled && urls.isNotEmpty()) {
                 val urlString = urls[0]
                 result = try {
                     val resultString = Jsoup.connect(urlString).get()
+                    Thread.sleep(5000) //create delay for testing TODO delete this
                     if (resultString != null) {
                         Result(resultString)
                     } else {
@@ -150,7 +143,7 @@ class NetworkFragment : Fragment() {
          * Updates the DownloadCallback with the result.
          */
         override fun onPostExecute(result: Result?) {
-            callback?.apply {
+            callback.apply {
                 result?.exception?.also { exception ->
                     //updateFromDownload(exception.message)
                     updateFromDownload(null)
