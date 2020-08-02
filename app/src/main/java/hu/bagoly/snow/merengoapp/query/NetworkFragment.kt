@@ -130,7 +130,6 @@ class NetworkFragment : Fragment() {
                 val urlString = requests[0].url
                 result = try {
                     val resultString = Jsoup.connect(urlString).get()
-                    Thread.sleep(5000) //create delay for testing TODO delete this
                     if (resultString != null) {
                         Result(resultString, requests[0].refreshType)
                     } else {

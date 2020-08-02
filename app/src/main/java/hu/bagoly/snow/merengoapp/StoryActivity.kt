@@ -52,6 +52,9 @@ class StoryActivity : DownloadCallbackActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // disabling swipe action (keeping the swipe refresh layout, as we use the fancy animation)
+        swipe_container.isEnabled = false
+
         val bundle = intent.extras
         if (bundle == null || !bundle.containsKey("id")) {
             Toast.makeText(
