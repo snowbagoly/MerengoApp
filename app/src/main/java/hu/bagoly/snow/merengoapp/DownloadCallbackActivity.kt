@@ -4,12 +4,11 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import hu.bagoly.snow.merengoapp.query.DownloadCallback
-import hu.bagoly.snow.merengoapp.query.DownloadCancellerNetworkCallback
-import hu.bagoly.snow.merengoapp.query.NetworkFragment
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import hu.bagoly.snow.merengoapp.query.*
 import org.jsoup.nodes.Document
 
-abstract class DownloadCallbackActivity : AppCompatActivity(), DownloadCallback<Document> {
+abstract class DownloadCallbackActivity : AppCompatActivity(), DownloadCallback<DownloadResponse> {
     // Keep a reference to the NetworkFragment, which owns the AsyncTask object
     // that is used to execute network ops.
     private var networkFragment: NetworkFragment? = null
@@ -28,25 +27,33 @@ abstract class DownloadCallbackActivity : AppCompatActivity(), DownloadCallback<
         }
     }
 
-    abstract fun handleResult(doc: Document)
+    abstract fun handleResult(doc: Document, refreshType: RefreshType)
 
-    override fun updateFromDownload(result: Document?) {
-        result?.let { handleResult(it) }
+    override fun updateFromDownload(result: DownloadResponse?) {
+        result?.let { handleResult(it.document, it.refreshType) }
         if (result == null) {
             Toast.makeText(this, "A letöltés sikertelen", Toast.LENGTH_SHORT).show()
         }
         finishDownloading()
     }
 
-    fun startDownloading(url: String) {
+    fun startDownloading(url: String, refreshType: RefreshType) {
         if (!downloading) {
             downloading = true
-            networkFragment?.startDownload(url)
+            networkFragment?.startDownload(url, refreshType)
+
+            findViewById<SwipeRefreshLayout>(R.id.swipe_container)?.let {
+                it.isRefreshing = true
+            }
         }
     }
 
     override fun finishDownloading() {
         downloading = false
         networkFragment?.cancelDownload()
+
+        findViewById<SwipeRefreshLayout>(R.id.swipe_container)?.let {
+            it.isRefreshing = false
+        }
     }
 }

@@ -11,8 +11,12 @@ import java.io.IOException
 
 private const val TAG = "NetworkFragment"
 
+class DownloadRequest(val url: String, val refreshType: RefreshType)
+
+class DownloadResponse(val document: Document, val refreshType: RefreshType)
+
 class NetworkFragment : Fragment() {
-    private var callback: DownloadCallback<Document>? = null
+    private var callback: DownloadCallback<DownloadResponse>? = null
     private val queueLock = Object()
     private val downloadTasks = HashMap<String, DownloadTask>()
 
@@ -46,7 +50,7 @@ class NetworkFragment : Fragment() {
     override fun onAttach(context: Context?) {
         super.onAttach(context)
         // Host Activity will handle callbacks from task.
-        callback = context as? DownloadCallback<Document>
+        callback = context as? DownloadCallback<DownloadResponse>
     }
 
     override fun onDetach() {
@@ -62,15 +66,15 @@ class NetworkFragment : Fragment() {
     }
 
     /**
-     * Start non-blocking execution of DownloadTask.
+     * Start non-blocking execution of DownloadTask, if it was not yet started for the given url
      */
-    fun startDownload(url: String) {
+    fun startDownload(url: String, refreshType: RefreshType) {
 
         callback?.also {
             synchronized(queueLock) {
                 if (!downloadTasks.contains(url) || downloadTasks[url]?.status != AsyncTask.Status.RUNNING) {
                     downloadTasks.put(url, DownloadTask(it).apply {
-                        execute(url)
+                        execute(DownloadRequest(url, refreshType))
                     })
                 }
             }
@@ -88,8 +92,8 @@ class NetworkFragment : Fragment() {
     /**
      * Implementation of AsyncTask designed to fetch data from the network.
      */
-    private class DownloadTask(val callback: DownloadCallback<Document>) :
-        AsyncTask<String, Int, DownloadTask.Result>() {
+    private class DownloadTask(val callback: DownloadCallback<DownloadResponse>) :
+        AsyncTask<DownloadRequest, Int, DownloadTask.Result>() {
 
         /**
          * Wrapper class that serves as a union of a result value and an exception. When the download
@@ -98,10 +102,12 @@ class NetworkFragment : Fragment() {
          */
         internal class Result {
             var resultValue: Document? = null
+            var refreshType: RefreshType? = null
             var exception: Exception? = null
 
-            constructor(resultValue: Document) {
+            constructor(resultValue: Document, refreshType: RefreshType) {
                 this.resultValue = resultValue
+                this.refreshType = refreshType
             }
 
             constructor(exception: Exception) {
@@ -118,16 +124,15 @@ class NetworkFragment : Fragment() {
         /**
          * Defines work to perform on the background thread.
          */
-        override fun doInBackground(vararg urls: String): DownloadTask.Result? {
+        override fun doInBackground(vararg requests: DownloadRequest): DownloadTask.Result? {
             var result: Result? = null
-            println(urls)
-            if (!isCancelled && urls.isNotEmpty()) {
-                val urlString = urls[0]
+            if (!isCancelled && requests.isNotEmpty()) {
+                val urlString = requests[0].url
                 result = try {
                     val resultString = Jsoup.connect(urlString).get()
                     Thread.sleep(5000) //create delay for testing TODO delete this
                     if (resultString != null) {
-                        Result(resultString)
+                        Result(resultString, requests[0].refreshType)
                     } else {
                         throw IOException("No response received.")
                     }
@@ -150,8 +155,10 @@ class NetworkFragment : Fragment() {
                     return
                 }
                 result?.resultValue?.also { resultValue ->
-                    updateFromDownload(resultValue)
-                    return
+                    result?.refreshType?.also { refreshTypeValue ->
+                        updateFromDownload(DownloadResponse(resultValue, refreshTypeValue))
+                        return
+                    }
                 }
                 finishDownloading()
             }

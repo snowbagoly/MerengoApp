@@ -12,6 +12,7 @@ import android.widget.ViewFlipper
 import androidx.recyclerview.widget.RecyclerView
 import hu.bagoly.snow.merengoapp.model.ChapterDescriptor
 import hu.bagoly.snow.merengoapp.query.ChapterPageParser
+import hu.bagoly.snow.merengoapp.query.RefreshType
 import hu.bagoly.snow.merengoapp.query.StoryPageParser
 import hu.bagoly.snow.merengoapp.query.isStoryPage
 import kotlinx.android.synthetic.main.story_descriptor_item_list.*
@@ -23,7 +24,7 @@ class StoryActivity : DownloadCallbackActivity() {
     var id: String? = null
     var forceOpenChapter: Boolean = false
 
-    override fun handleResult(doc: Document) {
+    override fun handleResult(doc: Document, refreshType: RefreshType) {
         if (isStoryPage(doc)) {
             val parser = StoryPageParser()
             parser.parse(doc)
@@ -72,7 +73,7 @@ class StoryActivity : DownloadCallbackActivity() {
         super.onStart()
         val storyUrl =
             "https://fanfic.hu/merengo/viewstory.php?sid=$id" + if (forceOpenChapter) "&i=1" else ""
-        startDownloading(storyUrl)
+        startDownloading(storyUrl, RefreshType.LOAD_NEW)
     }
 
     class ChapterDescriptorRecyclerViewAdapter(private val values: List<ChapterDescriptor>) :

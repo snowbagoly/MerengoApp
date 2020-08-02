@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import hu.bagoly.snow.merengoapp.model.StoryDescriptor
 import hu.bagoly.snow.merengoapp.query.RecentPageParser
 import hu.bagoly.snow.merengoapp.query.RefreshType
@@ -19,13 +20,14 @@ import org.jsoup.nodes.Document
 class MainActivity : DownloadCallbackActivity() {
 
     val parser = RecentPageParser()
-    var lastRefreshType: RefreshType = RefreshType.LOAD_NEW
     var lastOffsetLoaded: Int? = null
     var triggeredOffset = 0
     val recentPageUrl = "https://fanfic.hu/merengo/search.php?action=recent"
 
-    override fun handleResult(doc: Document) {
-        parser.parse(doc, lastRefreshType)
+    private fun getRecentPageUrlWithOffset() = recentPageUrl + "&offset=${triggeredOffset}"
+
+    override fun handleResult(doc: Document, refreshType: RefreshType) {
+        parser.parse(doc, refreshType)
         story_descriptor_item_list.adapter?.notifyDataSetChanged()
         lastOffsetLoaded = triggeredOffset
     }
@@ -37,23 +39,32 @@ class MainActivity : DownloadCallbackActivity() {
         story_descriptor_item_list.adapter = StoryDescriptorRecyclerViewAdapter(parser.descriptors)
         story_descriptor_item_list.layoutManager = LinearLayoutManager(this)
         story_descriptor_item_list.addOnScrollListener(StoryListScrollListener(this::triggerLoadingNext))
+        swipe_container.setOnRefreshListener(StoryListRefreshListener(this::triggerLoadingNext))
     }
 
     override fun onStart() {
         super.onStart()
-        startDownloading(recentPageUrl)
+        startDownloading(recentPageUrl, RefreshType.LOAD_NEW)
     }
 
-    fun triggerLoadingNext(refreshType: RefreshType) {
+    private fun triggerLoadingNext(refreshType: RefreshType) {
+        if (refreshType == RefreshType.LOAD_NEW) {
+            startDownloading(recentPageUrl, refreshType)
+            return
+        }
         // ignore loading if the last trigger was not yet finished
         if (lastOffsetLoaded != triggeredOffset)
             return
 
         triggeredOffset += 15
-        lastRefreshType = refreshType // TODO this will not work properly
-        val recentPageUrl =
-            "https://fanfic.hu/merengo/search.php?action=recent&offset=${triggeredOffset}" // check if it changes or not
-        startDownloading(recentPageUrl)
+        startDownloading(getRecentPageUrlWithOffset(), refreshType)
+    }
+
+    class StoryListRefreshListener(val triggerUpdate: (RefreshType) -> Unit) :
+        SwipeRefreshLayout.OnRefreshListener {
+        override fun onRefresh() {
+            triggerUpdate(RefreshType.LOAD_NEW)
+        }
     }
 
     class StoryListScrollListener(val triggerUpdate: (RefreshType) -> Unit) :
