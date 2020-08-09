@@ -24,7 +24,13 @@ class StoryPageParser {
         val currentChapterElement = chapterSelectorElement.select("option[selected]")
         currentChapterTitle = currentChapterElement.first().text()
 
-        val contentNodes = chapterSelectorElement.parents().get(1).siblingNodes().dropLast(2)
-        content = contentNodes.joinToString("\n")
+        val contentNodes = chapterSelectorElement.parents().get(1).siblingNodes()
+        content = contentNodes.joinToString("").replace("\\s+".toRegex(), " ")
+
+        // Eliminating the chapter selectors and other form elements
+        for (formElement in doc.select("table table form"))
+        {
+            content = content?.replace(formElement.toString().replace("\\s+".toRegex(), " "), "")
+        }
     }
 }
