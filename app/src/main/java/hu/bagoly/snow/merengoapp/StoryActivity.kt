@@ -17,14 +17,17 @@ import hu.bagoly.snow.merengoapp.query.StoryPageParser
 import hu.bagoly.snow.merengoapp.query.isStoryPage
 import kotlinx.android.synthetic.main.story_descriptor_item_list.*
 import kotlinx.android.synthetic.main.story_descriptor_item_list_content.view.*
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
 class StoryActivity : DownloadCallbackActivity() {
 
     var id: String? = null
     var forceOpenChapter: Boolean = false
+    var doc: Document? = null
 
     override fun handleResult(doc: Document, refreshType: RefreshType) {
+        this.doc = doc
         if (isStoryPage(doc)) {
             val parser = StoryPageParser()
             parser.parse(doc)
@@ -55,7 +58,8 @@ class StoryActivity : DownloadCallbackActivity() {
         // disabling swipe action (keeping the swipe refresh layout, as we use the fancy animation)
         swipe_container.isEnabled = false
 
-        val bundle = intent.extras
+        // loading everything from saved state when it exists
+        val bundle = if (savedInstanceState != null) savedInstanceState else intent.extras
         if (bundle == null || !bundle.containsKey("id")) {
             Toast.makeText(
                 applicationContext,
@@ -67,16 +71,34 @@ class StoryActivity : DownloadCallbackActivity() {
         }
 
         id = bundle.getString("id")
-        forceOpenChapter = bundle.containsKey("forceOpenChapter")
+        forceOpenChapter = bundle.containsKey("forceOpenChapter") && bundle.getBoolean("forceOpenChapter")
+        if (bundle.containsKey("doc")) {
+            handleResult(Jsoup.parse(bundle.getString("doc")), RefreshType.LOAD_NEW)
+        }
 
         initializeNetworkFragment()
     }
 
     override fun onStart() {
         super.onStart()
-        val storyUrl =
-            "https://fanfic.hu/merengo/viewstory.php?sid=$id" + if (forceOpenChapter) "&i=1" else ""
-        startDownloading(storyUrl, RefreshType.LOAD_NEW)
+
+        // Load the story/chapters only when necessary
+        if (doc == null) {
+            val storyUrl =
+                "https://fanfic.hu/merengo/viewstory.php?sid=$id" + if (forceOpenChapter) "&i=1" else ""
+            startDownloading(storyUrl, RefreshType.LOAD_NEW)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        if (doc != null) {
+            outState.putString("doc", doc.toString())
+        }
+
+        outState.putString("id", id)
+        outState.putBoolean("forceOpenChapter", forceOpenChapter)
     }
 
     class ChapterDescriptorRecyclerViewAdapter(private val values: List<ChapterDescriptor>) :
