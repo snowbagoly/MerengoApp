@@ -10,12 +10,16 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import hu.bagoly.snow.merengoapp.model.StoryDescriptor
 import hu.bagoly.snow.merengoapp.query.RecentPageParser
 import hu.bagoly.snow.merengoapp.query.RefreshType
 import kotlinx.android.synthetic.main.story_descriptor_item_list.*
 import kotlinx.android.synthetic.main.story_descriptor_item_list_content.view.*
 import org.jsoup.nodes.Document
+import java.util.concurrent.TimeUnit
 
 class MainActivity : DownloadCallbackActivity() {
 
@@ -36,6 +40,7 @@ class MainActivity : DownloadCallbackActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         initializeNetworkFragment()
+        initializeUpdateCheckWorker()
         story_descriptor_item_list.adapter = StoryDescriptorRecyclerViewAdapter(parser.descriptors)
         story_descriptor_item_list.layoutManager = LinearLayoutManager(this)
         story_descriptor_item_list.addOnScrollListener(StoryListScrollListener(this::triggerLoadingNext))
@@ -58,6 +63,15 @@ class MainActivity : DownloadCallbackActivity() {
 
         triggeredOffset += 15
         startDownloading(getRecentPageUrlWithOffset(), refreshType)
+    }
+
+    private fun initializeUpdateCheckWorker() {
+        val workRequest = PeriodicWorkRequestBuilder<UpdateCheckWorker>(30, TimeUnit.MINUTES).build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "update_check",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
     }
 
     class StoryListRefreshListener(val triggerUpdate: (RefreshType) -> Unit) :
