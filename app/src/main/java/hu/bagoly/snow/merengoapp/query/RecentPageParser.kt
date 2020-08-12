@@ -71,6 +71,7 @@ class RecentPageParser {
         val author = firstRowLinks.get(0).text()
         val criticsCount = firstRowLinks.get(2).text()
 
+        val rawDescription = story.select("tr").get(1).select("td").text()
         val description = story.select("tr").get(1).select("td").html()
 
         val category = story.select("tr").get(3).select("td").get(1).text()
@@ -90,7 +91,7 @@ class RecentPageParser {
 
         id?.let {
             return StoryDescriptor(
-                id = it, author = author, title = title,
+                id = it, author = author, title = title, rawDescription = rawDescription,
                 description = description, category = category, cast = cast,
                 ageLimit = ageLimit, warnings = warnings, properties = properties,
                 chapterCount = chapterCount, creationDate = creationDate,
