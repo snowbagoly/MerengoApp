@@ -108,8 +108,10 @@ class MainActivity : DownloadCallbackActivity() {
         )
         cursor.moveToFirst()
         if (!cursor.isAfterLast) {
-//            println("success" + cursor.getString(cursor.getColumnIndex("doc")).substring(50))
-            handleResult(Jsoup.parse(cursor.getString(cursor.getColumnIndex("doc"))), RefreshType.LOAD_NEW)
+            handleResult(
+                Jsoup.parse(cursor.getString(cursor.getColumnIndex("doc"))),
+                RefreshType.LOAD_NEW
+            )
         }
         database.close()
     }
@@ -135,12 +137,11 @@ class MainActivity : DownloadCallbackActivity() {
     }
 
     private fun initializeUpdateCheckWorker() {
-        val constraints =
-            Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
         val workRequest =
-            PeriodicWorkRequestBuilder<UpdateCheckWorker>(30, TimeUnit.MINUTES).setConstraints(
-                constraints
-            ).addTag("update_check").build()
+            PeriodicWorkRequestBuilder<UpdateCheckWorker>(30, TimeUnit.MINUTES)
+                .addTag("update_check")
+                .setInitialDelay(15, TimeUnit.MINUTES)
+                .build()
         val workManager = WorkManager.getInstance(this)
         workManager.cancelAllWorkByTag("update_check")
         workManager.pruneWork()

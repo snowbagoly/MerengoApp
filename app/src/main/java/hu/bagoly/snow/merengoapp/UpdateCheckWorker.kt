@@ -21,15 +21,10 @@ class UpdateCheckWorker(appContext: Context, workerParams: WorkerParameters) :
 
     val recentPageUrl = "https://fanfic.hu/merengo/search.php?action=recent"
 
-//    private fun getDateTime(): String? {
-//        val dateFormat = SimpleDateFormat(
-//            "yyyy-MM-dd HH:mm:ss", Locale.getDefault()
-//        )
-//        val date = Date()
-//        return dateFormat.format(date)
-//    }
-
-    private fun compareDocs(referenceDoc: Document, latestDoc: Document): List<StoryDescriptor> {
+    private fun compareDocs(
+        referenceDoc: Document,
+        latestDoc: Document
+    ): List<StoryDescriptor> {
         val newStories = ArrayList<StoryDescriptor>()
 
         val referenceParser = RecentPageParser()
@@ -108,12 +103,7 @@ class UpdateCheckWorker(appContext: Context, workerParams: WorkerParameters) :
     }
 
     override fun doWork(): Result {
-        val latestDoc = downloadLatest()
-
-        if (latestDoc == null) {
-            println("----------------very failed")
-            return Result.failure()
-        }
+        val latestDoc = downloadLatest() ?: return Result.failure()
 
         val database =
             applicationContext.openOrCreateDatabase("MerengoApp", Context.MODE_PRIVATE, null)
@@ -128,14 +118,13 @@ class UpdateCheckWorker(appContext: Context, workerParams: WorkerParameters) :
             "insertion_date DESC",
             "1"
         )
-//        val cursor = database.rawQuery("SELECT * FROM most_recent_data", null)
         cursor.moveToFirst()
 
-        var needsRefresh = cursor.isAfterLast
+        var needsRefresh = false
 
         if (!cursor.isAfterLast) {
             val previousDoc = Jsoup.parse(cursor.getString(cursor.getColumnIndex("doc")))
-            val freshStories = compareDocs(previousDoc, latestDoc)
+            val freshStories: List<StoryDescriptor> = compareDocs(previousDoc, latestDoc)
             if (freshStories.isNotEmpty()) {
                 createNotification(freshStories)
                 needsRefresh = true
