@@ -1,0 +1,19 @@
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <hu.bagoly.snow.merengoapp.custompreference.LimitedNumberPreference
+        maxValue="20"
+        minValue="12"
+        android:defaultValue="3"
+        android:key="font_size"
+        android:title="Betűméret"
+        app:iconSpaceReserved="false" />
+
+    <SwitchPreferenceCompat
+        android:key="adult_content_warning"
+        android:title="18+"
+        android:summary="Figyelmeztetés megjelenítése 18+ tartalom megnyitásánál"
+        android:defaultValue="true"
+        app:iconSpaceReserved="false" />
+
+</androidx.preference.PreferenceScreen>

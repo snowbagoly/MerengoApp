@@ -1,7 +1,10 @@
 package hu.bagoly.snow.merengoapp
 
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -55,5 +58,18 @@ abstract class DownloadCallbackActivity : AppCompatActivity(), DownloadCallback<
         findViewById<SwipeRefreshLayout>(R.id.swipe_container)?.let {
             it.isRefreshing = false
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.toolbar_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.toolbar_menu_settings) {
+            startActivity(Intent(this, SettingsActivity::class.java))
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 }

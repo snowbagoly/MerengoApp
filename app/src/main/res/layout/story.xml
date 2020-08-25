@@ -3,14 +3,14 @@
     xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-    <TextView
+    <hu.bagoly.snow.merengoapp.ResizableTextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/title" />
     <ScrollView
         android:layout_width="fill_parent"
         android:layout_height="fill_parent">
-        <TextView
+        <hu.bagoly.snow.merengoapp.ResizableTextView
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:id="@+id/content" />

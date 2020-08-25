@@ -7,6 +7,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -96,10 +98,24 @@ class MainActivity : DownloadCallbackActivity() {
             holder.idView.text = "${item.title} (${item.id}) írta: ${item.author}"
             holder.contentView.text = Html.fromHtml(item.description, Html.FROM_HTML_MODE_COMPACT)
             holder.itemView.setOnClickListener {
-                val intent = Intent(holder.itemView.context, StoryActivity::class.java).apply {
+                val context = holder.itemView.context
+                val intent = Intent(context, StoryActivity::class.java).apply {
                     putExtra("id", item.id)
                 }
-                holder.itemView.context.startActivity(intent)
+
+                val sharedPref = PreferenceManager.getDefaultSharedPreferences(context)
+                if (item.isAdultContent() && sharedPref.getBoolean("adult_content_warning", true)) {
+                    val dialog = AlertDialog.Builder(context)
+                        .setMessage("Tizennyolc éven aluliak számára nem ajánlott.")
+                        .setNegativeButton("Mégse", null)
+                        .setPositiveButton("Ok") { _, _ ->
+                            context.startActivity(intent)
+                        }
+                        .create()
+                    dialog.show()
+                } else {
+                    context.startActivity(intent)
+                }
             }
         }
 

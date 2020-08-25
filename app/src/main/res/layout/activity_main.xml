@@ -7,10 +7,12 @@
     tools:context=".MainActivity">
 
     <ViewFlipper
-        android:layout_height="match_parent"
+        android:id="@+id/content_view_container"
         android:layout_width="match_parent"
-        android:id="@+id/content_view_container">
+        android:layout_height="match_parent">
+
         <include layout="@layout/story_descriptor_item_list" />
+
         <include layout="@layout/story" />
     </ViewFlipper>
 

@@ -47,7 +47,7 @@ class NetworkFragment : Fragment() {
         retainInstance = true
     }
 
-    override fun onAttach(context: Context?) {
+    override fun onAttach(context: Context) {
         super.onAttach(context)
         // Host Activity will handle callbacks from task.
         callback = context as? DownloadCallback<DownloadResponse>
