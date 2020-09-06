@@ -31,17 +31,18 @@ class StoryActivity : DownloadCallbackActivity() {
         if (isStoryPage(doc)) {
             val parser = StoryPageParser()
             parser.parse(doc)
+            title = parser.title
             val layout = findViewById<ViewFlipper>(R.id.content_view_container)
             layout.displayedChild = 1
             val title = findViewById<TextView>(R.id.title)
-            println("title: ${parser.title}, chapterTitle: ${parser.currentChapterTitle}")
-            title.text = parser.title
+            title.text = "${parser.author}: ${parser.currentChapterTitle}"
 
             val content = findViewById<TextView>(R.id.content)
             content.text = Html.fromHtml(parser.content, Html.FROM_HTML_MODE_COMPACT)
         } else {
             val parser = ChapterPageParser()
             parser.parse(doc)
+            title = parser.storyTitle
             val layout = findViewById<ViewFlipper>(R.id.content_view_container)
             layout.displayedChild = 0
             story_descriptor_item_list.adapter =
@@ -71,7 +72,8 @@ class StoryActivity : DownloadCallbackActivity() {
         }
 
         id = bundle.getString("id")
-        forceOpenChapter = bundle.containsKey("forceOpenChapter") && bundle.getBoolean("forceOpenChapter")
+        forceOpenChapter =
+            bundle.containsKey("forceOpenChapter") && bundle.getBoolean("forceOpenChapter")
         if (bundle.containsKey("doc")) {
             handleResult(Jsoup.parse(bundle.getString("doc")), RefreshType.LOAD_NEW)
         }
@@ -113,20 +115,44 @@ class StoryActivity : DownloadCallbackActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = values[position]
-            holder.idView.text = "${position + 1}. ${item.title} (${item.id}) írta: ${item.author}"
+            holder.idView.text = "${position + 1}. ${item.author}: ${item.title}"
             holder.contentView.text = Html.fromHtml(item.description, Html.FROM_HTML_MODE_COMPACT)
-            holder.itemView.setOnClickListener {
+            holder.additionalDetailsView.text = Html.fromHtml(
+                "Korhatár: ${item.ageLimit}<br>" +
+                        "Figyelmeztetések: <b>${item.warnings}</b>",
+                Html.FROM_HTML_MODE_COMPACT
+            )
+
+            holder.idView.setOnClickListener {
                 val intent = Intent(holder.itemView.context, StoryActivity::class.java).apply {
                     putExtra("id", item.id)
                     putExtra("forceOpenChapter", true)
                 }
                 holder.itemView.context.startActivity(intent)
             }
+
+            val extendOnClickListener = View.OnClickListener {
+                val toExtend = holder.contentView.maxLines < Integer.MAX_VALUE
+                if (toExtend) {
+                    holder.contentView.maxLines = Integer.MAX_VALUE
+                    holder.additionalDetailsView.visibility = View.VISIBLE
+                    holder.extendArrowView.text = "▲"
+                } else {
+                    holder.contentView.maxLines = 3
+                    holder.additionalDetailsView.visibility = View.GONE
+                    holder.extendArrowView.text = "▼"
+                }
+            }
+            holder.contentView.setOnClickListener(extendOnClickListener)
+            holder.additionalDetailsView.setOnClickListener(extendOnClickListener)
+            holder.extendArrowView.setOnClickListener(extendOnClickListener)
         }
 
         inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val idView: TextView = view.id_text
             val contentView: TextView = view.content
+            val additionalDetailsView: TextView = view.additional_details
+            val extendArrowView: TextView = view.extend_arrow
         }
     }
 

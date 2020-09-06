@@ -4,10 +4,12 @@ import hu.bagoly.snow.merengoapp.model.ChapterDescriptor
 import org.jsoup.nodes.Document
 
 class ChapterPageParser {
+    var storyTitle : String? = null
     val descriptors = ArrayList<ChapterDescriptor>()
     val idRegex = Regex("sid=(\\d+)")
 
     fun parse(doc: Document) {
+        storyTitle = doc.select("center > h3 > font").text()
         val rawChapterDescriptors = doc.select(".mainnav tr")
 
         // a chapter descriptor consists of five rows

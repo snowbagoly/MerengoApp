@@ -36,6 +36,7 @@ class MainActivity : DownloadCallbackActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setTitle("Legfrissebb történetek")
         setContentView(R.layout.activity_main)
         initializeNetworkFragment()
         story_descriptor_item_list.adapter = StoryDescriptorRecyclerViewAdapter(parser.descriptors)
@@ -95,9 +96,19 @@ class MainActivity : DownloadCallbackActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = values[position]
-            holder.idView.text = "${item.title} (${item.id}) írta: ${item.author}"
+            holder.idView.text = "${item.author}: ${item.title}"
             holder.contentView.text = Html.fromHtml(item.description, Html.FROM_HTML_MODE_COMPACT)
-            holder.itemView.setOnClickListener {
+            holder.additionalDetailsView.text = Html.fromHtml(
+                "Kategória: ${item.category}<br>" +
+                        "Karakterek: ${item.cast}<br>" +
+                        "Korhatár: ${item.ageLimit}<br>" +
+                        "Figyelmeztetések: <b>${item.warnings}</b><br>" +
+                        "Jellemzők: ${item.properties}<br>" +
+                        "Fejezetek: ${item.chapterCount}<br>" +
+                        "Frissítés: ${item.lastRefreshDate}",
+                Html.FROM_HTML_MODE_COMPACT
+            )
+            holder.idView.setOnClickListener {
                 val context = holder.itemView.context
                 val intent = Intent(context, StoryActivity::class.java).apply {
                     putExtra("id", item.id)
@@ -117,11 +128,29 @@ class MainActivity : DownloadCallbackActivity() {
                     context.startActivity(intent)
                 }
             }
+
+            val extendOnClickListener = View.OnClickListener {
+                val toExtend = holder.contentView.maxLines < Integer.MAX_VALUE
+                if (toExtend) {
+                    holder.contentView.maxLines = Integer.MAX_VALUE
+                    holder.additionalDetailsView.visibility = View.VISIBLE
+                    holder.extendArrowView.text = "▲"
+                } else {
+                    holder.contentView.maxLines = 3
+                    holder.additionalDetailsView.visibility = View.GONE
+                    holder.extendArrowView.text = "▼"
+                }
+            }
+            holder.contentView.setOnClickListener(extendOnClickListener)
+            holder.additionalDetailsView.setOnClickListener(extendOnClickListener)
+            holder.extendArrowView.setOnClickListener(extendOnClickListener)
         }
 
         inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val idView: TextView = view.id_text
             val contentView: TextView = view.content
+            val additionalDetailsView: TextView = view.additional_details
+            val extendArrowView: TextView = view.extend_arrow
         }
     }
 
