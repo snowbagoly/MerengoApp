@@ -7,6 +7,7 @@
     <hu.bagoly.snow.merengoapp.ResizableTextView
         android:id="@+id/id_text"
         fontSizeDiff="2"
+        android:fontFamily="@font/bitter_bold"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
@@ -16,9 +17,11 @@
 
     <hu.bagoly.snow.merengoapp.ResizableTextView
         android:id="@+id/content"
+        android:fontFamily="@font/bitter_regular"
+        android:lineSpacingExtra="4sp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
+        android:layout_marginHorizontal="22dp"
         android:layout_marginVertical="4dp"
         android:ellipsize="end"
         android:maxLines="3"
@@ -26,9 +29,11 @@
 
     <hu.bagoly.snow.merengoapp.ResizableTextView
         android:id="@+id/additional_details"
+        android:fontFamily="@font/bitter_regular"
+        android:lineSpacingExtra="4sp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
+        android:layout_marginHorizontal="22dp"
         android:layout_marginVertical="4dp"
         android:text="További infók"
         android:visibility="gone" />
